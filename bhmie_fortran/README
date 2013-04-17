@@ -1,0 +1,44 @@
+Originally downloaded from ScatterLib at
+http://code.google.com/p/scatterlib/wiki/Spheres
+
+C Subroutine BHMIE is the Bohren-Huffman Mie scattering subroutine
+C    to calculate scattering and absorption by a homogenous isotropic
+C    sphere.
+C Given:
+C    X = 2*pi*a/lambda
+C    REFREL = (complex refr. index of sphere)/(real index of medium)
+C    NANG = number of angles between 0 and 90 degrees
+C           (will calculate 2*NANG-1 directions from 0 to 180 deg.)
+C           if called with NANG<2, will set NANG=2 and will compute
+C           scattering for theta=0,90,180.
+C Returns:
+C    S1(1 - 2*NANG-1) = -i*f_22 (incid. E perp. to scatt. plane,
+C                                scatt. E perp. to scatt. plane)
+C    S2(1 - 2*NANG-1) = -i*f_11 (incid. E parr. to scatt. plane,
+C                                scatt. E parr. to scatt. plane)
+C    QEXT = C_ext/pi*a**2 = efficiency factor for extinction
+C    QSCA = C_sca/pi*a**2 = efficiency factor for scattering
+C    QBACK = (dC_sca/domega)/pi*a**2
+C          = backscattering efficiency [NB: this is (1/4*pi) smaller
+C            than the "radar backscattering efficiency"; see Bohren &
+C            Huffman 1983 pp. 120-123]
+C    GSCA = <cos(theta)> for scattering
+C
+C Original program taken from Bohren and Huffman (1983), Appendix A
+C Modified by B.T.Draine, Princeton Univ. Obs., 90/10/26
+C in order to compute <cos(theta)>
+C 91/05/07 (BTD): Modified to allow NANG=1
+C 91/08/15 (BTD): Corrected error (failure to initialize P)
+C 91/08/15 (BTD): Modified to enhance vectorizability.
+C 91/08/15 (BTD): Modified to make NANG=2 if called with NANG=1
+C 91/08/15 (BTD): Changed definition of QBACK.
+C 92/01/08 (BTD): Converted to full double precision and double complex
+C                 eliminated 2 unneed lines of code
+C                 eliminated redundant variables (e.g. APSI,APSI0)
+C                 renamed RN -> EN = double precision N
+C                 Note that DOUBLE COMPLEX and DCMPLX are not part
+C                 of f77 standard, so this version may not be fully
+C                 portable.  In event that portable version is
+C                 needed, use src/bhmie_f77.f
+C 93/06/01 (BTD): Changed AMAX1 to generic function MAX
+
