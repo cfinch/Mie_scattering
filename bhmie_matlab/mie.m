@@ -1,9 +1,9 @@
-function [s1,s2,qext,qsca,qback,gsca]=bhmie(x,refrel,nang)
+function [s1,s2,qext,qsca,qback,gsca]=mie(x,refrel,angles)
 % Calculated based on Mie scattering theory  
 % input:
 %      x - size parameter =2pi*lambda/radius
 %      refrel - refreation index in complext form for example:  1.5+0.02*i;
-%      nang - namber of angle for S1 and S2 function in range from 0 to pi/2
+%      angles - angles at which to compute S1 and S2 function
 % output:
 %        S1, S2 - funtion which coresponted to phase function
 %        Qext - extinction efficiency
@@ -13,26 +13,16 @@ function [s1,s2,qext,qsca,qback,gsca]=bhmie(x,refrel,nang)
 
 % zatem w sumie jest ich 2*nang-1 bo od 0 do pi
 
- mxnang=1000;
  nmxx=150000;
-
- s1=zeros(1,2*mxnang-1);     % ilosc katow dla funkcji S1 S2  
- s2=zeros(1,2*mxnang-1);
+ nang=length(angles);
+ 
+ s1=zeros(1,nang);     % ilosc katow dla funkcji S1 S2  
+ s2=zeros(1,nang);
  d=zeros(1,nmxx);
- amu=zeros(1,mxnang);
- pi=zeros(1,mxnang);
- pi0=zeros(1,mxnang);
- pi1=zeros(1,mxnang);
- tau=zeros(1,mxnang);
-
- if (nang > mxnang)
-   disp('error: nang > mxnang in bhmie')
-   return
- end
-
- if (nang < 2)
-   nang = 2;
- end
+ pi=zeros(1,nang);
+ pi0=zeros(1,nang);
+ pi1=ones(1,nang);
+ tau=zeros(1,nang);
 
   pii = 4.*atan(1.);
   dx = x;
@@ -61,19 +51,7 @@ function [s1,s2,qext,qsca,qback,gsca]=bhmie(x,refrel,nang)
           'error: nmx > nmxx=', nmxx, ' for |m|x=', ymod
           return
       end
-% Require NANG.GE.1 in order to calculate scattering intensities
-      dang = 0.;
-      if (nang > 1)
-        dang = .5*pii/ (nang-1);
-      end
-      for j=1: nang %do begin % DO 10 j = 1, nang
-          theta =  (j-1)*dang;
-          amu(j) = cos(theta);
-      end
-      for j=1: nang   %DO 20 j = 1, nang
-          pi0(j) = 0.;
-          pi1(j) = 1.;
-      end
+      amu = cos(angles);
       nn = 2*nang - 1;
 % Logarithmic derivative D(J) calculated by downward recurrence
 % beginning with initial value (0.,0.) at J=NMX
@@ -92,7 +70,7 @@ function [s1,s2,qext,qsca,qback,gsca]=bhmie(x,refrel,nang)
       psi1 = sin(dx);
       chi0 = -sin(dx);
       chi1 = cos(dx);
-      xi1 = psi1-chi1*i;
+      xi1 = psi1-chi1*1i;
       qsca = 0.;
       gsca = 0.;
       p = -1;
@@ -105,7 +83,7 @@ function [s1,s2,qext,qsca,qback,gsca]=bhmie(x,refrel,nang)
 % Calculate psi_n and chi_n
           psi = (2.*en-1.)*psi1/dx - psi0;
           chi = (2.*en-1.)*chi1/dx - chi0;
-          xi = psi-chi*i;
+          xi = psi-chi*1i;
 %
 %*** Store previous values of AN and BN for use
 %    in computation of g=<cos(theta)>
@@ -130,7 +108,7 @@ function [s1,s2,qext,qsca,qback,gsca]=bhmie(x,refrel,nang)
                     ( real(an1)* real(an)+imag(an1)*imag(an)+...
                      real(bn1)* real(bn)+imag(bn1)*imag(bn));
 
-                   end %endif
+          end %endif
 %
 %*** Now calculate scattering intensity pattern
 %    First do angles from 0 to 90
@@ -145,17 +123,17 @@ function [s1,s2,qext,qsca,qback,gsca]=bhmie(x,refrel,nang)
 %*** Now do angles greater than 90 using PI and TAU from
 %    angles less than 90.
 %    P=1 for N=1,3,...% P=-1 for N=2,4,...
-          p = -p;
-          for j=1: nang-1   % DO 60 j = 1, nang - 1
-              jj = 2*nang - j;
-              s1(jj) = s1(jj) + fn*p* (an*pi(j)-bn*tau(j));
-              s2(jj) = s2(jj) + fn*p* (bn*pi(j)-an*tau(j));
-          end %endfor % 60     CONTINUE
+%           p = -p;
+%           for j=1: nang-1   % DO 60 j = 1, nang - 1
+%               jj = 2*nang - j;
+%               s1(jj) = s1(jj) + fn*p* (an*pi(j)-bn*tau(j));
+%               s2(jj) = s2(jj) + fn*p* (bn*pi(j)-an*tau(j));
+%           end %endfor % 60     CONTINUE
           psi0 = psi1;
           psi1 = psi;
           chi0 = chi1;
           chi1 = chi;
-          xi1 = psi1-chi1*i;
+          xi1 = psi1-chi1*1i;
 %
 %*** Compute pi_n for next value of n
 %    For each angle J, compute pi_n+1
@@ -165,18 +143,20 @@ function [s1,s2,qext,qsca,qback,gsca]=bhmie(x,refrel,nang)
                       en;
               pi0(j) = pi(j);
            end %endfor %70     CONTINUE
-           end %endfor %   80 CONTINUE
+      end %endfor %   80 CONTINUE
 %
 %*** Have summed sufficient terms.
 %    Now compute QSCA,QEXT,QBACK,and GSCA
       gsca = 2.*gsca/qsca;
       qsca = (2./ (dx*dx))*qsca;
       qext = (4./ (dx*dx))* real(s1(1));
-      qback = (abs(s1(2*nang-1))/dx)^2/pii;
-      ss1=s1;
+      qback = (abs(s1(length(s1))) / dx)^2 / pii;
+
+      ss1=s1;
       ss2=s2;
       clear s1 s2
       a=find(ss1~=0);
       n=max(a);
-      s1=ss1(1:n);
+
+      s1=ss1(1:n);
       s2=ss2(1:n);

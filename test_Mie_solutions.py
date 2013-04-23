@@ -6,32 +6,35 @@ import bhmie_herbert_kaiser_july2012
 
 x = 0.099
 refrel = 0.75
-ang = 0.0
+angles = arange(0.0, pi + 0.01, pi/6)
 nang = 7
 
 # ----- Python -----
-S1, S2, Qext, Qsca, Qback, gsca = bhmie_herbert_kaiser_july2012.bhmie(x, refrel, array([ang]))
+S1, S2, Qext, Qsca, Qback, gsca = bhmie_herbert_kaiser_july2012.bhmie(x, refrel, angles)
 print("bhmie, Python implementation:")
 for i in range(len(S1)):
-    print("{}  {}".format(S1, S2))
+    print("{}   {}  {}".format(cos(angles[i]), S1[i], S2[i]))
 
 # ----- FORTRAN -----
 S1, S2, Qext, Qsca, Qback, Gsca = bhmie_fortran.bhmie(x, refrel, nang)
 print("bhmie, FORTRAN implementation:")
-for i in range(2 * nang - 1):
-    print("{}  {}  ".format(S1[i], S2[i]))
+for i in range(nang):
+    print("{}   {}  {}".format(cos(angles[i]), S1[i], S2[i]))
+
 print(Qext)
 print(Qback)
 print(Gsca)
 
 # ----- MATLAB, one file -----
-print('Calling MATLAB')
-S1, S2 = call_bhmie_matlab(x, refrel, nang)
-print('bhmie, MATLAB single-file implementation')
-print(S1, S2)
+print('Calling MATLAB single-file implementation')
+for a in angles:
+    S1, S2 = call_bhmie_matlab(x, refrel, array(a))
+    print("{}   {}  {}".format(cos(a), S1, S2))
+
 
 # ----- MATLAB, multi-file -----
-print('Calling MATLAB')
-S1, S2 = call_Mie_MATLAB(refrel, x, ang)
-print('Multi-file MATLAB implementation')
-print(S1, S2)
+print('Calling MATLAB multi-file')
+for a in angles:
+    S1, S2 = call_Mie_MATLAB(refrel, x, array(a))
+    print("{}   {}  {}".format(cos(a), S1, S2))
+
