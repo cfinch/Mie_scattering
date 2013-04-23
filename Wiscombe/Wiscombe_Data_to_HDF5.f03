@@ -1291,42 +1291,51 @@ PROGRAM H5_TABLE
   INTEGER, PARAMETER :: real_kind_15 = SELECTED_REAL_KIND(Fortran_REAL_8)
 
   CHARACTER(LEN=18), PARAMETER :: filename     = "Wiscombe_data.h5"
-  CHARACTER(LEN=6) , PARAMETER :: dataset_CR      = "TestCR"
-  CHARACTER(LEN=2) , PARAMETER :: dataset_S1 = "S1", dataset_S2 = "S2"
-  INTEGER          , PARAMETER :: dim0         = 4
-  INTEGER          , PARAMETER :: maxstringlen = 80
+  CHARACTER(LEN=6), PARAMETER :: dataset_XX = "TestXX"  
+  CHARACTER(LEN=6), PARAMETER :: dataset_CR = "TestCR", dataset_QE = "TestQE"
+  CHARACTER(LEN=6), PARAMETER :: dataset_QS = "TestQS", dataset_GQ = "TestGQ"
+  CHARACTER(LEN=6), PARAMETER :: dataset_SF = "TestSF", dataset_SB = "TestSB"
+  CHARACTER(LEN=2), PARAMETER :: dataset_S1 = "S1", dataset_S2 = "S2"
+  INTEGER         , PARAMETER :: dim0         = 4
+  INTEGER         , PARAMETER :: maxstringlen = 80
 
-  TYPE sensor_t ! Compound data type
-     INTEGER :: serial_no
-     CHARACTER(LEN=maxstringlen) :: location
-     REAL(real_kind_15) :: temperature
-     REAL(real_kind_15) :: pressure
-  END TYPE sensor_t
-  TYPE(sensor_t), DIMENSION(1:dim0), TARGET ::  wdata ! Write buffer
+  ! Real arrays
+  REAL, DIMENSION(1:NCASES), TARGET :: TestQE_h5, TestQS_h5, TestGQ_h5, TestXX_h5
 
+  ! Complex arrays
   type hdf5_complex
     real :: real
     real :: imag
   end type
-  type(hdf5_complex), dimension(1:NCASES), TARGET :: TestCR_h5
+  type(hdf5_complex), dimension(1:NCASES), TARGET :: TestCR_h5, TestSF_h5, TestSB_h5
   type(hdf5_complex), dimension(1:NCASES, 1:NANG), TARGET :: TestS1_h5, TestS2_h5
 
-  INTEGER(HID_T)  :: file, filetype, complex_filetype, memtype, complex_memtype, space, space_2D, dset, complex_dset, strtype ! Handles
+  INTEGER(HID_T) :: file, filetype, complex_filetype, memtype, complex_memtype
+  INTEGER(HID_T) :: space, space_2D, dset, complex_dset, strtype ! Handles
   INTEGER :: hdferr
   INTEGER(HSIZE_T), DIMENSION(1:1) :: dims = (/NCASES/)
 !  INTEGER(HSIZE_T), DIMENSION(1:NCASES) :: dims_2D = (/ (NANG, I=1,NCASES) /)
   INTEGER(HSIZE_T), DIMENSION(2) :: dims_2D = (/ NANG, NCASES /)
   TYPE(C_PTR) :: f_ptr
-  !
+  
   ! Initialize FORTRAN interface.
-  !
   CALL h5open_f(hdferr)
-  !
+  
   ! Initialize data.
-  !
   do i = 1, NCASES
       TestCR_h5(i)%real = real(TestCR(i))
       TestCR_h5(i)%imag = imag(TestCR(i))
+
+      TestSF_h5(i)%real = real(TestSF(i))
+      TestSF_h5(i)%imag = imag(TestSF(i))
+
+      TestSB_h5(i)%real = real(TestSB(i))
+      TestSB_h5(i)%imag = imag(TestSB(i))
+
+      TestXX_h5(i) = TestXX(i)
+      TestQE_h5(i) = TestQE(i)
+      TestQS_h5(i) = TestQS(i)
+      TestGQ_h5(i) = TestGQ(i)
 
       do j = 1, NANG
           TestS1_h5(i,j)%real = real(TestS1(i,j))
@@ -1335,51 +1344,78 @@ PROGRAM H5_TABLE
           TestS2_h5(i,j)%imag = imag(TestS2(i,j))
       end do
   end do
-  !
+  
   ! Create a new file using the default properties.
-  !
   CALL h5fcreate_f(filename, H5F_ACC_TRUNC_F, file, hdferr)
-  !
+  
   ! Create the compound datatype for memory.
-  !
   CALL h5tcreate_f(H5T_COMPOUND_F, H5OFFSETOF(C_LOC(TestCR_h5(1)), C_LOC(TestCR_h5(2))), complex_memtype, hdferr)
   CALL h5tinsert_f(complex_memtype, "Real", &
        H5OFFSETOF(C_LOC(TestCR_h5(1)),C_LOC(TestCR_h5(1)%real)), H5T_NATIVE_REAL, hdferr)
   CALL h5tinsert_f(complex_memtype, "Imaginary", &
        H5OFFSETOF(C_LOC(TestCR_h5(1)),C_LOC(TestCR_h5(1)%imag)), H5T_NATIVE_REAL, hdferr)
-  !
+  
   ! Create the compound datatype for the file.  Because the standard
   ! types we are using for the file may have different sizes than
   ! the corresponding native types, we must manually calculate the
   ! offset of each member.
-  !
   CALL h5tcreate_f(H5T_COMPOUND_F, INT(8 + maxstringlen + 8 + 8 , size_t), complex_filetype, hdferr)
   CALL h5tinsert_f(complex_filetype, "Real", 0_size_t, H5T_IEEE_F64BE, hdferr)
   CALL h5tinsert_f(complex_filetype, "Imaginary", INT(8 + maxstringlen + 8, size_t), &
        H5T_IEEE_F64BE, hdferr)
-  !
-  ! Create dataspace.  Set the size to be the current size.
-  !
+  
+  ! Create dataspaces.  Set the size to be the current size.
   CALL h5screate_simple_f(1, dims, space, hdferr)
-  !
   CALL h5screate_simple_f(2, dims_2D, space_2D, hdferr)
-  !
-  ! Create the dataset and write the compound data to it.
-  !
+  
+  ! Create each dataset and write the compound data to it.
+
+  ! CREFIN
   CALL h5dcreate_f(file, dataset_CR, complex_filetype, space, complex_dset, hdferr)
   f_ptr = C_LOC(TestCR_h5(1))
   CALL h5dwrite_f(complex_dset, complex_memtype, f_ptr, hdferr)
-  !
+
+  ! S FORWARD
+  CALL h5dcreate_f(file, dataset_SF, complex_filetype, space, complex_dset, hdferr)
+  f_ptr = C_LOC(TestSF_h5(1))
+  CALL h5dwrite_f(complex_dset, complex_memtype, f_ptr, hdferr)
+
+  ! S BACK
+  CALL h5dcreate_f(file, dataset_SB, complex_filetype, space, complex_dset, hdferr)
+  f_ptr = C_LOC(TestSB_h5(1))
+  CALL h5dwrite_f(complex_dset, complex_memtype, f_ptr, hdferr)
+
+  ! XX
+  CALL h5dcreate_f(file, dataset_XX, H5T_NATIVE_REAL, space, dset, hdferr)
+  f_ptr = C_LOC(TestXX_h5)
+  CALL h5dwrite_f(dset, H5T_NATIVE_REAL, f_ptr, hdferr)
+
+  ! QEXT
+  CALL h5dcreate_f(file, dataset_QE, H5T_NATIVE_REAL, space, dset, hdferr)
+  f_ptr = C_LOC(TestQE_h5)
+  CALL h5dwrite_f(dset, H5T_NATIVE_REAL, f_ptr, hdferr)
+
+  ! QSCA
+  CALL h5dcreate_f(file, dataset_QS, H5T_NATIVE_REAL, space, dset, hdferr)
+  f_ptr = C_LOC(TestQS_h5)
+  CALL h5dwrite_f(dset, H5T_NATIVE_REAL, f_ptr, hdferr)
+
+  ! GQSC
+  CALL h5dcreate_f(file, dataset_GQ, H5T_NATIVE_REAL, space, dset, hdferr)
+  f_ptr = C_LOC(TestGQ_h5)
+  CALL h5dwrite_f(dset, H5T_NATIVE_REAL, f_ptr, hdferr)
+
+  ! S1
   CALL h5dcreate_f(file, dataset_S1, complex_filetype, space_2D, complex_dset, hdferr)
   f_ptr = C_LOC(TestS1_h5(1,1))
   CALL h5dwrite_f(complex_dset, complex_memtype, f_ptr, hdferr)
-  !
+
+  ! S2
   CALL h5dcreate_f(file, dataset_S2, complex_filetype, space_2D, complex_dset, hdferr)
   f_ptr = C_LOC(TestS2_h5(1,1))
   CALL h5dwrite_f(complex_dset, complex_memtype, f_ptr, hdferr)
-  !
+  
   ! Close and release resources.
-  !
   CALL h5dclose_f(complex_dset, hdferr)
   CALL h5sclose_f(space, hdferr)
   CALL h5tclose_f(complex_filetype, hdferr)
