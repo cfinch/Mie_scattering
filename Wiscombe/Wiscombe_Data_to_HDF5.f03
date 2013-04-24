@@ -1308,13 +1308,12 @@ PROGRAM H5_TABLE
     real :: imag
   end type
   type(hdf5_complex), dimension(1:NCASES), TARGET :: TestCR_h5, TestSF_h5, TestSB_h5
-  type(hdf5_complex), dimension(1:NCASES, 1:NANG), TARGET :: TestS1_h5, TestS2_h5
+  type(hdf5_complex), dimension(1:NANG, 1:NCASES), TARGET :: TestS1_h5, TestS2_h5
 
   INTEGER(HID_T) :: file, filetype, complex_filetype, memtype, complex_memtype
   INTEGER(HID_T) :: space, space_2D, dset, complex_dset, strtype ! Handles
-  INTEGER :: hdferr
-  INTEGER(HSIZE_T), DIMENSION(1:1) :: dims = (/NCASES/)
-!  INTEGER(HSIZE_T), DIMENSION(1:NCASES) :: dims_2D = (/ (NANG, I=1,NCASES) /)
+  INTEGER :: hdferr, c, a
+  INTEGER(HSIZE_T), DIMENSION(1:1) :: dims = (/ NCASES /)
   INTEGER(HSIZE_T), DIMENSION(2) :: dims_2D = (/ NANG, NCASES /)
   TYPE(C_PTR) :: f_ptr
   
@@ -1322,26 +1321,26 @@ PROGRAM H5_TABLE
   CALL h5open_f(hdferr)
   
   ! Initialize data.
-  do i = 1, NCASES
-      TestCR_h5(i)%real = real(TestCR(i))
-      TestCR_h5(i)%imag = imag(TestCR(i))
+  do c = 1, NCASES
+      TestCR_h5(c)%real = real(TestCR(c))
+      TestCR_h5(c)%imag = imag(TestCR(c))
 
-      TestSF_h5(i)%real = real(TestSF(i))
-      TestSF_h5(i)%imag = imag(TestSF(i))
+      TestSF_h5(c)%real = real(TestSF(c))
+      TestSF_h5(c)%imag = imag(TestSF(c))
 
-      TestSB_h5(i)%real = real(TestSB(i))
-      TestSB_h5(i)%imag = imag(TestSB(i))
+      TestSB_h5(c)%real = real(TestSB(c))
+      TestSB_h5(c)%imag = imag(TestSB(c))
 
-      TestXX_h5(i) = TestXX(i)
-      TestQE_h5(i) = TestQE(i)
-      TestQS_h5(i) = TestQS(i)
-      TestGQ_h5(i) = TestGQ(i)
+      TestXX_h5(c) = TestXX(c)
+      TestQE_h5(c) = TestQE(c)
+      TestQS_h5(c) = TestQS(c)
+      TestGQ_h5(c) = TestGQ(c)
 
-      do j = 1, NANG
-          TestS1_h5(i,j)%real = real(TestS1(i,j))
-          TestS1_h5(i,j)%imag = imag(TestS1(i,j))
-          TestS2_h5(i,j)%real = real(TestS2(i,j))
-          TestS2_h5(i,j)%imag = imag(TestS2(i,j))
+      do a = 1, NANG
+          TestS1_h5(a,c)%real = real(TestS1(a,c))
+          TestS1_h5(a,c)%imag = imag(TestS1(a,c))
+          TestS2_h5(a,c)%real = real(TestS2(a,c))
+          TestS2_h5(a,c)%imag = imag(TestS2(a,c))
       end do
   end do
   
