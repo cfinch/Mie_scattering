@@ -8,7 +8,7 @@ bhmie.o : bhmie.f
 	gfortran -c bhmie.f
 
 python: bhmie.f
-	f2py2.7 -c -m bhmie_fortran bhmie.f 
+	f2py -c -m bhmie_fortran bhmie.f 
 
 clean :
 	rm -f callbhmie.o bhmie.o callbhmie callbhmie.out *.pyc bhmie_fortran.so

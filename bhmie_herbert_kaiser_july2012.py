@@ -146,7 +146,7 @@ def bhmie(x, refrel, angles):
     # more common definition of the backscattering efficiency,
     # so that the backscattering cross section really
     # has dimension of length squared
-    qback = 4 * (abs(s1[-1]) / dx)**2   # this is correct ONLY IF the final angle is pi
+    qback = (abs(s1[-1]) / dx)**2 / pi   # this is correct ONLY IF the final angle is pi
     #qback = ((abs(s1[2*nang-2])/dx)**2 )/PI  #old form
 
     return s1, s2, qext, qsca, qback, gsca

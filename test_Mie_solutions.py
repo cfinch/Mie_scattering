@@ -1,3 +1,4 @@
+import os
 from numpy import *
 import h5py
 from bhmie_fortran import bhmie_fortran
@@ -9,7 +10,7 @@ def prettyprint(S1, S2, Qext, Qsca, Qback, gsca, nang):
     """Display data in a layout similar Wiscombe's format"""
     print("Angle  Cosine              S1                        S2             Intensity         Polzn")
     for i in range(nang):
-        print("{:.2f}  {: .4f}  {: .5e} {: .5e}  {: .5e} {: .5e}".format(angles[i],
+        print("{:.2f}  {: .4f}  {: .5e} {: .5e}  {: .5e} {: .5e}     TBD             TBD".format(angles[i],
             cos(angles[i]), S1[i].real, S1[i].imag, S2[i].real, S2[i].imag))
         print("                ({: .5f})   ({: .5f})    ({: .5f})   ({: .5f})".format(
             S1[i].real / TestS1[case, i].real, S1[i].imag / TestS1[case, i].imag,
@@ -47,9 +48,14 @@ angles = arange(0.0, pi + 0.01, pi/6)
 nang = len(angles)
 
 # Loop over Wiscombe's test cases
-for case in range(5,6):
+for case in range(4, len(TestCR)):
     refrel = TestCR[case]
     x = TestXX[case]
+    
+    print("---------------------------------------------------------------" + os.linesep)
+    print("Case {}".format(case + 1))   # match Wiscombe's case numbers
+    print("Refractive index = {:.4f}".format(refrel))
+    print("Size parameter = {:.4f}".format(x) + os.linesep)
 
     # ----- Python -----
     S1, S2, Qext, Qsca, Qback, gsca = bhmie_herbert_kaiser_july2012.bhmie(x, refrel, angles)
@@ -57,7 +63,7 @@ for case in range(5,6):
     prettyprint(S1, S2, Qext, Qsca, Qback, gsca, len(angles))
 
     # ----- FORTRAN -----
-    S1, S2, Qext, Qsca, Qback, gsca = bhmie_fortran.bhmie(x, refrel, nang)
+    S1, S2, Qext, Qsca, Qback, gsca = bhmie_fortran.bhmie(x, refrel, 4)
     print("bhmie, FORTRAN implementation:")
     prettyprint(S1, S2, Qext, Qsca, Qback, gsca, nang)
 
@@ -70,6 +76,6 @@ for case in range(5,6):
     # ----- MATLAB, multi-file -----
     print('Calling MATLAB multi-file')
     for a in range(len(angles)):
-        S1[a], S2[a] = call_Mie_MATLAB(refrel, x, array(angles[a]))
+        S1[a], S2[a] = call_Mie_MATLAB(x, refrel, angles[a])
     prettyprint(S1, S2, 0.0, 0.0, 0.0, 0.0, nang)
 
